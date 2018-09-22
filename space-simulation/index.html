@@ -39,6 +39,10 @@
 
     <script>
         let output;
+        const CANVAS_WIDTH = 500;
+        const CANVAS_HEIGHT = 500;
+        const MAX_DISTANCE = Math.sqrt(Math.pow(CANVAS_WIDTH, 2) + Math.pow(CANVAS_HEIGHT, 2));
+        const LATENCY_MS = 250;
 
         async function main() {
             let access;
@@ -66,19 +70,21 @@
                     output = o;
                 }
             }
+
+            for (var e of document.querySelectorAll(".node")) {
+                e.onmousedown = onMouseDownNode;
+                e.onmousemove = onMouseMoveNode;
+                e.onmouseup = onMouseUpNode;
+                e.onmouseout = onMouseUpNode;
+            }
+
+            setInterval(sendNodeMetrics, LATENCY_MS);
         }
 
         // See https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message
         function sendControlChange(output, channel, controlNumber, controlValue) {
             const statusCode = 176 + channel;
             output.send([statusCode, controlNumber, controlValue]);
-        }
-
-        for (var e of document.querySelectorAll(".node")) {
-            e.onmousedown = onMouseDownNode;
-            e.onmousemove = onMouseMoveNode;
-            e.onmouseup = onMouseUpNode;
-            e.onmouseout = onMouseUpNode;
         }
 
         let buttonPressed = false;
@@ -119,6 +125,13 @@
                 }
             }
             return distances;
+        }
+
+        function sendNodeMetrics() {
+            const distances = getNodeDistances();
+            const averageDistances = distances.reduce((acc, d) => acc + d, 0) / distances.length;
+
+            sendControlChange(output, 0, 1, Math.floor(averageDistances * 127 / MAX_DISTANCE))
         }
 
         main();
