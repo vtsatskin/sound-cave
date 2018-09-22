@@ -34,6 +34,7 @@
         <div class="node" style="transform: translate(200px, 100px);"></div>
         <div class="node" style="transform: translate(50px, 200px);"></div>
         <div class="node" style="transform: translate(200px, 200px);"></div>
+        <div class="node" style="transform: translate(300px, 300px);"></div>
     </div>
 
     <script>
@@ -95,6 +96,29 @@
 
         function onMouseUpNode(event) {
             buttonPressed = false;
+        }
+
+        function getNodePositions() {
+            return Array.from(document.querySelectorAll(".node")).map(node => {
+                const rect = node.getBoundingClientRect();
+                return [rect.x, rect.y];
+            })
+        }
+
+        function getNodeDistances() {
+            const nodesToMeasure = Array.from(document.querySelectorAll(".node"));
+            let distances = [];
+            while (nodesToMeasure.length > 1) {
+                const nodeA = nodesToMeasure.pop();
+                for (const nodeB of nodesToMeasure) {
+                    const nodeARect = nodeA.getBoundingClientRect();
+                    const nodeBRect = nodeB.getBoundingClientRect();
+                    distances.push(
+                        Math.sqrt(Math.pow((nodeARect.x - nodeBRect.x), 2) + Math.pow((nodeARect.y - nodeBRect.y), 2))
+                    );
+                }
+            }
+            return distances;
         }
 
         main();
