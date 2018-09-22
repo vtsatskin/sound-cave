@@ -38,17 +38,12 @@
                     output = o;
                 }
             }
-
-            setInterval(sendInterval, 1000);
         }
 
-        function sendInterval() {
-            if (!output) {
-                console.log("No output");
-                return;
-            }
-
-            output.send([0x90, 0x45, 0x7f]);
+        // See https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message
+        function sendControlChange(output, channel, controlNumber, controlValue) {
+            const statusCode = 176 + channel;
+            output.send([statusCode, controlNumber, controlValue]);
         }
 
         main();
