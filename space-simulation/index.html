@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Space Simulation</title>
+</head>
+
+<body>
+    <script>
+        let output;
+
+        async function main() {
+            let access;
+            try {
+                access = await navigator.requestMIDIAccess();
+            } catch (e) {
+                console.log(e);
+            }
+
+
+            // Get lists of available MIDI controllers
+            const inputs = access.inputs.values();
+            const outputs = access.outputs.values();
+
+            access.onstatechange = function (e) {
+
+                // Print information about the (dis)connected MIDI controller
+                console.log(e.port.name, e.port.manufacturer, e.port.state);
+            };
+
+
+            for (var o of outputs) {
+                console.log("Output", o)
+                if (!output) {
+                    output = o;
+                }
+            }
+
+            setInterval(sendInterval, 1000);
+        }
+
+        function sendInterval() {
+            if (!output) {
+                console.log("No output");
+                return;
+            }
+
+            output.send([0x90, 0x45, 0x7f]);
+        }
+
+        main();
+    </script>
+</body>
+
+</html>
