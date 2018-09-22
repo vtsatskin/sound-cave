@@ -6,9 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Space Simulation</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        .canvas {
+            background-color: #ccc;
+            position: relative;
+            width: 500px;
+            height: 500px;
+        }
+
+        .node {
+            position: absolute;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            background-color: black;
+        }
+    </style>
 </head>
 
 <body>
+    <div class="canvas">
+        <div class="node" style="transform: translate(50px, 100px);"></div>
+        <div class="node" style="transform: translate(200px, 100px);"></div>
+        <div class="node" style="transform: translate(50px, 200px);"></div>
+        <div class="node" style="transform: translate(200px, 200px);"></div>
+    </div>
+
     <script>
         let output;
 
@@ -44,6 +71,30 @@
         function sendControlChange(output, channel, controlNumber, controlValue) {
             const statusCode = 176 + channel;
             output.send([statusCode, controlNumber, controlValue]);
+        }
+
+        for (var e of document.querySelectorAll(".node")) {
+            e.onmousedown = onMouseDownNode;
+            e.onmousemove = onMouseMoveNode;
+            e.onmouseup = onMouseUpNode;
+            e.onmouseout = onMouseUpNode;
+        }
+
+        let buttonPressed = false;
+        function onMouseDownNode(event) {
+            buttonPressed = true;
+        }
+
+        function onMouseMoveNode(event) {
+            if (!buttonPressed) {
+                return;
+            }
+
+            event.target.style.transform = `translate(${event.clientX - 25}px, ${event.clientY - 25}px)`;
+        }
+
+        function onMouseUpNode(event) {
+            buttonPressed = false;
         }
 
         main();
