@@ -52,12 +52,17 @@ while True:
             distances.append(math.sqrt(pow(blob_a[0] - blob_a[0], 2) +
                                        pow(blob_a[1] - blob_b[1], 2)))
 
-    average_distance = sum(distances) / len(distances)
-
     max_distance = math.sqrt(
         pow(mask_small.shape[0], 2) + pow(mask_small.shape[1], 2))
+    average_distance = sum(distances) / \
+        len(distances) if len(distances) else max_distance
+
     msg = mido.Message('control_change', channel=0, control=1, value=int(
         average_distance / max_distance * 127))
+    port.send(msg)
+
+    msg = mido.Message('control_change', channel=0,
+                       control=2, value=len(blobs))
     port.send(msg)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
