@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "f54e8d4db2c9c706ebc3f724573bb0d415cd2f2ae27197887b1b91e814767aa4"
+            "sha256": "e1dc61d3f7b90431652eada3fe01136ef54d78b996ab1e3bb4f33be22640a049"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -142,7 +142,6 @@
                 "sha256:e3660744cda0d94b90141cdd0db9308b958a372cfeee8d7188fdf5ad9108ea82",
                 "sha256:f2362d0ca3e16c37782c1054d7972b8ad2729169567e3f0f4e5dd3cdf85f188e"
             ],
-            "markers": "python_version != '3.2.*' and python_version != '3.0.*' and python_version >= '2.7' and python_version != '3.3.*' and python_version != '3.1.*'",
             "version": "==1.15.1"
         },
         "opencv-python": {
@@ -228,6 +227,13 @@
                 "sha256:e27001de32f627c22380a688bcc43ce83504a7bc5da472209b4c70f02829f0b8"
             ],
             "version": "==2.7.3"
+        },
+        "python-rtmidi": {
+            "hashes": [
+                "sha256:a796fc764febb9240a3c3de5ed230ae4d74f505c4e6298fb7e5f811bef845501"
+            ],
+            "index": "pypi",
+            "version": "==1.1.1"
         },
         "pywavelets": {
             "hashes": [

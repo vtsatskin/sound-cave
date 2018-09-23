@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import math
+import mido
 from skimage import feature
 from skimage.transform import resize
 
@@ -8,6 +9,7 @@ im_width = 320
 im_height = 240
 kernel = np.ones((10, 10), np.uint8)
 cap = cv2.VideoCapture(0)
+port = mido.open_output()
 
 while True:
     ret, img = cap.read()
@@ -40,6 +42,23 @@ while True:
 
     # show
     cv2.imshow("frame", preview)
+
+    # send MIDI data
+    distances = []
+    blobs_to_measure = blobs.tolist()
+    while len(blobs_to_measure) > 1:
+        blob_a = blobs_to_measure.pop()
+        for blob_b in blobs:
+            distances.append(math.sqrt(pow(blob_a[0] - blob_a[0], 2) +
+                                       pow(blob_a[1] - blob_b[1], 2)))
+
+    average_distance = sum(distances) / len(distances)
+
+    max_distance = math.sqrt(
+        pow(mask_small.shape[0], 2) + pow(mask_small.shape[1], 2))
+    msg = mido.Message('control_change', channel=0, control=1, value=int(
+        average_distance / max_distance * 127))
+    port.send(msg)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

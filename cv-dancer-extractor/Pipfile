@@ -8,6 +8,7 @@ mido = "*"
 opencv-python = "*"
 scipy = "*"
 scikit-image = "*"
+python-rtmidi = "*"
 
 [dev-packages]
 
