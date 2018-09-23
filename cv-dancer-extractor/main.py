@@ -1,5 +1,8 @@
 import numpy as np
 import cv2
+import math
+from skimage import feature
+from skimage.transform import resize
 
 im_width = 320
 im_height = 240
@@ -24,13 +27,22 @@ while True:
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # save
-    cv2.imshow("frame", green)
+    # clustering
+    # we resize image to make it process faster
+    mask_small = resize(mask, (mask.shape[0] // 4, mask.shape[1] // 4))
+    preview = resize(green, (green.shape[0] // 4, green.shape[1] // 4))
+    blobs = feature.blob_dog(mask_small, threshold=.5,
+                             min_sigma=0.5, max_sigma=20)
+
+    # output blobs
+    for y, x, sigma in blobs:
+        cv2.circle(preview, (int(x), int(y)), 4, (0, 255, 0), -1)
+
+    # show
+    cv2.imshow("frame", preview)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
-    # FF2D50
 
 cap.release()
 cv2.destroyAllWindows()

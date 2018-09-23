@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 mido = "*"
 opencv-python = "*"
+scipy = "*"
+scikit-image = "*"
 
 [dev-packages]
 
