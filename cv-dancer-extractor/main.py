@@ -5,11 +5,11 @@ import mido
 from skimage import feature
 from skimage.transform import resize
 
-im_width = 320
-im_height = 240
+NUM_SAMPLES_TO_STORE = 5
 kernel = np.ones((10, 10), np.uint8)
 cap = cv2.VideoCapture(0)
 port = mido.open_output()
+historical_positions = []
 
 while True:
     ret, img = cap.read()
@@ -40,6 +40,12 @@ while True:
     for y, x, sigma in blobs:
         cv2.circle(preview, (int(x), int(y)), 4, (0, 255, 0), -1)
 
+    # store last NUM_SAMPLES_TO_STORE blob locations
+    historical_positions.append(
+        [[x, y] for y, x, sigma in blobs]
+    )
+    historical_positions = historical_positions[-NUM_SAMPLES_TO_STORE:]
+
     # show
     cv2.imshow("frame", preview)
 
@@ -57,12 +63,37 @@ while True:
     average_distance = sum(distances) / \
         len(distances) if len(distances) else max_distance
 
+    centroids = []
+    for positions in historical_positions:
+        x_sum = 0
+        y_sum = 0
+
+        for x, y in positions:
+            x_sum += x
+            y_sum += y
+
+        centroids.append([x_sum, y_sum])
+
+    mean_centroid = [
+        sum([x for x, y in centroids]) / len(centroids),
+        sum([y for x, y in centroids]) / len(centroids),
+    ]
+
+    centroid_errors = [abs(x - mean_centroid[0]) +
+                       abs(y - mean_centroid[1]) for x, y in centroids]
+
+    sum_centroid_errors = sum(centroid_errors)
+
     msg = mido.Message('control_change', channel=0, control=1, value=int(
         average_distance / max_distance * 127))
     port.send(msg)
 
     msg = mido.Message('control_change', channel=0,
                        control=2, value=len(blobs))
+    port.send(msg)
+
+    msg = mido.Message('control_change', channel=0,
+                       control=3, value=min(127, int(sum_centroid_errors / 1500 * 127)))
     port.send(msg)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
