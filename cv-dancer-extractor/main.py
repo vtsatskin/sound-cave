@@ -4,6 +4,8 @@ import math
 import mido
 from skimage import feature
 from skimage.transform import resize
+from sklearn.cluster import AffinityPropagation
+from itertools import cycle
 
 NUM_SAMPLES_TO_STORE = 5
 kernel = np.ones((10, 10), np.uint8)
@@ -31,14 +33,26 @@ while True:
 
     # clustering
     # we resize image to make it process faster
-    mask_small = resize(mask, (mask.shape[0] // 4, mask.shape[1] // 4))
-    preview = resize(green, (green.shape[0] // 4, green.shape[1] // 4))
+    mask_small = resize(
+        mask, (mask.shape[0] // 4, mask.shape[1] // 4), mode="constant", anti_aliasing=False)
+    preview = resize(
+        green, (green.shape[0] // 4, green.shape[1] // 4), mode="constant", anti_aliasing=False)
     blobs = feature.blob_dog(mask_small, threshold=.5,
                              min_sigma=0.5, max_sigma=20)
 
+    # clustering
+    af = AffinityPropagation(
+        preference=-50).fit([[x, y] for y, x, sigma in blobs])
+    cluster_centers_indices = af.cluster_centers_indices_
+    labels = af.labels_
+    n_clusters_ = len(cluster_centers_indices)
+
+    colors = cycle([(255, 0, 0), (0, 255, 0), (0, 0, 255)])
+    kolors = [c for _, c in zip(range(n_clusters_), colors)]
+
     # output blobs
-    for y, x, sigma in blobs:
-        cv2.circle(preview, (int(x), int(y)), 4, (0, 255, 0), -1)
+    for (label, (y, x, sigma)) in zip(labels, blobs):
+        cv2.circle(preview, (int(x), int(y)), 4, kolors[label], -1)
 
     # store last NUM_SAMPLES_TO_STORE blob locations
     historical_positions.append(

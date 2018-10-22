@@ -9,6 +9,7 @@ opencv-python = "*"
 scipy = "*"
 scikit-image = "*"
 python-rtmidi = "*"
+scikit-learn = "*"
 
 [dev-packages]
 
