@@ -6,12 +6,49 @@ from skimage import feature
 from skimage.transform import resize
 from sklearn.cluster import AffinityPropagation
 from itertools import cycle
+from typing import NamedTuple, Union, Dict, Tuple
+
+CHANNEL: int = 0
+
+ControlChange = NamedTuple("ControlChange", [
+    ('channel', int),
+    ('control', int),
+    ('value', int)
+])
+
+MetricName = Union[
+    "blob_number",
+    "blob_average_distance",
+    "blob_movement",
+    "cluster_number",
+    "cluster_average_distance",
+    "cluster_distance"
+]
+
+Metric = NamedTuple('Metric', [
+    ('value', float),
+    ('max_value', float),
+    ('min_value', float),
+])
+
+
+# MetricName -> (channel, control)
+MetricToControlChange: Dict[MetricName, Tuple[int, int]] = {
+    "blob_number": (CHANNEL, 1),
+    "blob_average_distance": (CHANNEL, 0),
+    "blob_movement": (CHANNEL, 2),
+    "cluster_number": (CHANNEL, 4),
+    "cluster_average_distance": (CHANNEL, 3),
+    "cluster_distance": (CHANNEL, 5)
+}
 
 NUM_SAMPLES_TO_STORE = 5
 kernel = np.ones((10, 10), np.uint8)
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 port = mido.open_output()
 historical_positions = []
+
+prev_metrics: Dict[MetricName, Metric] = {}
 
 while True:
     ret, img = cap.read()
@@ -41,11 +78,15 @@ while True:
                              min_sigma=0.5, max_sigma=20)
 
     # clustering
-    af = AffinityPropagation(
-        preference=-50).fit([[x, y] for y, x, sigma in blobs])
-    cluster_centers_indices = af.cluster_centers_indices_
-    labels = af.labels_
-    n_clusters_ = len(cluster_centers_indices)
+    labels = []
+    n_clusters_ = 0
+
+    X = np.array([[x, y] for y, x, sigma in blobs])
+    if len(X) > 0:
+        af = AffinityPropagation(preference=-50).fit(X)
+        cluster_centers_indices = af.cluster_centers_indices_
+        labels = af.labels_
+        n_clusters_ = len(cluster_centers_indices)
 
     colors = cycle([(255, 0, 0), (0, 255, 0), (0, 0, 255)])
     kolors = [c for _, c in zip(range(n_clusters_), colors)]
@@ -98,17 +139,35 @@ while True:
 
     sum_centroid_errors = sum(centroid_errors)
 
-    msg = mido.Message('control_change', channel=0, control=1, value=int(
-        average_distance / max_distance * 127))
-    port.send(msg)
+    metrics: Dict[MetricName, Metric] = {
+        'blob_number': Metric(
+            value=len(blobs),
+            max_value=127,
+            min_value=0
+        ),
+        'blob_average_distance': Metric(
+            value=average_distance,
+            max_value=max_distance,
+            min_value=0
+        ),
+        'blob_movement': Metric(
+            value=sum_centroid_errors,
+            max_value=1500,
+            min_value=0
+        )
+    }
 
-    msg = mido.Message('control_change', channel=0,
-                       control=2, value=len(blobs))
-    port.send(msg)
-
-    msg = mido.Message('control_change', channel=0,
-                       control=3, value=min(127, int(sum_centroid_errors / 1500 * 127)))
-    port.send(msg)
+    for metric_name, metric in metrics.items():
+        channel, control = MetricToControlChange[metric_name]
+        cc = ControlChange(
+            channel=channel,
+            control=control,
+            value=int((metric.value - metric.min_value) /
+                      metric.max_value * 127)
+        )
+        msg = mido.Message('control_change', channel=cc.channel,
+                           control=cc.control, value=cc.value)
+        port.send(msg)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
