@@ -6,9 +6,14 @@ from skimage import feature
 from skimage.transform import resize
 from sklearn.cluster import AffinityPropagation
 from itertools import cycle
-from typing import NamedTuple, Union, Dict, Tuple
+from typing import NamedTuple, Union, Dict, Tuple, List
 
 CHANNEL: int = 0
+
+ChannelControl = NamedTuple("ChannelControl", [
+    ('channel', int),
+    ('control', int),
+])
 
 ControlChange = NamedTuple("ControlChange", [
     ('channel', int),
@@ -33,7 +38,7 @@ Metric = NamedTuple('Metric', [
 
 
 # MetricName -> (channel, control)
-MetricToControlChange: Dict[MetricName, Tuple[int, int]] = {
+MetricToControlChange: Dict[MetricName, Tuple[ChannelControl]] = {
     "blob_number": (CHANNEL, 1),
     "blob_average_distance": (CHANNEL, 0),
     "blob_movement": (CHANNEL, 2),
@@ -48,7 +53,7 @@ cap = cv2.VideoCapture(1)
 port = mido.open_output()
 historical_positions = []
 
-prev_metrics: Dict[MetricName, Metric] = {}
+prev_ccs: Dict[ChannelControl, int] = {}
 
 while True:
     ret, img = cap.read()
@@ -157,17 +162,29 @@ while True:
         )
     }
 
+    ccs: List[ControlChange] = []
     for metric_name, metric in metrics.items():
         channel, control = MetricToControlChange[metric_name]
+
         cc = ControlChange(
             channel=channel,
             control=control,
-            value=int((metric.value - metric.min_value) /
-                      metric.max_value * 127)
+            value=max(0, min(127, int((metric.value - metric.min_value) /
+                                      metric.max_value * 127)))
         )
+        ccs.append(cc)
+
+    for cc in ccs:
+        prev_cc = prev_ccs.get((cc.channel, cc.control))
+        if prev_cc and prev_cc.value == cc.value:
+            # skip ccs which haven't changed
+            continue
+
         msg = mido.Message('control_change', channel=cc.channel,
                            control=cc.control, value=cc.value)
         port.send(msg)
+
+    prev_ccs = dict([((cc.channel, cc.control), cc) for cc in ccs])
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
