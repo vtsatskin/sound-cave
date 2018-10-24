@@ -99,6 +99,14 @@ while True:
     colors = cycle([(255, 0, 0), (0, 255, 0), (0, 0, 255)])
     kolors = [c for _, c in zip(range(n_clusters_), colors)]
 
+    # draw connections between blobs
+    blobs_to_connect = blobs.tolist()
+    while len(blobs_to_connect) > 1:
+        blob_a = blobs_to_connect.pop()
+        for blob_b in blobs:
+            cv2.line(img, (int(blob_a[1]) * 4, int(blob_a[0]) * 4),
+                     (int(blob_b[1]) * 4, int(blob_b[0]) * 4), (0, 0, 0), 1, cv2.LINE_AA)
+
     # output blobs
     for (label, (y, x, sigma)) in zip(labels, blobs):
         cv2.circle(img, (int(x) * 4, int(y) * 4), 4, (0, 255, 0), -1)
@@ -138,6 +146,9 @@ while True:
         sum([x for x, y in centroids]) / len(centroids),
         sum([y for x, y in centroids]) / len(centroids),
     ]
+
+    cv2.circle(
+        img, (int(centroids[-1][0]) * 4, int(centroids[-1][1]) * 4), 4, (0, 0, 255), -1)
 
     centroid_errors = [abs(x - mean_centroid[0]) +
                        abs(y - mean_centroid[1]) for x, y in centroids]
