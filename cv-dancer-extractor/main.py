@@ -55,6 +55,9 @@ historical_positions = []
 
 prev_ccs: Dict[ChannelControl, int] = {}
 
+cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
+cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
 while True:
     ret, img = cap.read()
 
@@ -98,7 +101,7 @@ while True:
 
     # output blobs
     for (label, (y, x, sigma)) in zip(labels, blobs):
-        cv2.circle(preview, (int(x), int(y)), 4, kolors[label], -1)
+        cv2.circle(img, (int(x) * 4, int(y) * 4), 4, (0, 255, 0), -1)
 
     # store last NUM_SAMPLES_TO_STORE blob locations
     historical_positions.append(
@@ -107,7 +110,7 @@ while True:
     historical_positions = historical_positions[-NUM_SAMPLES_TO_STORE:]
 
     # show
-    cv2.imshow("frame", preview)
+    cv2.imshow("window", img)
 
     # send MIDI data
     distances = []
