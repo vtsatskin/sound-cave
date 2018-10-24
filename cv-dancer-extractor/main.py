@@ -109,9 +109,6 @@ while True:
     )
     historical_positions = historical_positions[-NUM_SAMPLES_TO_STORE:]
 
-    # show
-    cv2.imshow("window", img)
-
     # send MIDI data
     distances = []
     blobs_to_measure = blobs.tolist()
@@ -165,6 +162,14 @@ while True:
         )
     }
 
+    cv2.rectangle(img, (0, 0), (500, 150), (0, 0, 0), -1)
+    cv2.putText(img, 'Blobs: {}'.format(len(blobs)), (10, 40),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(img, 'Blob Average Distance: {0:.2f}'.format(average_distance), (10, 80),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(img, 'Blob Movement: {0:.2f}'.format(sum_centroid_errors), (10, 120),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
     ccs: List[ControlChange] = []
     for metric_name, metric in metrics.items():
         channel, control = MetricToControlChange[metric_name]
@@ -188,6 +193,9 @@ while True:
         port.send(msg)
 
     prev_ccs = dict([((cc.channel, cc.control), cc) for cc in ccs])
+
+    # show
+    cv2.imshow("window", img)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
