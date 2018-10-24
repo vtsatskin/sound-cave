@@ -135,7 +135,7 @@ while True:
             x_sum += x
             y_sum += y
 
-        centroids.append([x_sum, y_sum])
+        centroids.append([x_sum / len(positions), y_sum / len(positions)])
 
     mean_centroid = [
         sum([x for x, y in centroids]) / len(centroids),
