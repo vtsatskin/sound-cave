@@ -47,6 +47,7 @@ MetricToControlChange: Dict[MetricName, Tuple[ChannelControl]] = {
     "cluster_distance": (CHANNEL, 5)
 }
 
+SCALE_FACTOR = 4
 NUM_SAMPLES_TO_STORE = 5
 kernel = np.ones((10, 10), np.uint8)
 cap = cv2.VideoCapture(1)
@@ -90,11 +91,13 @@ while True:
     # clustering
     # we resize image to make it process faster
     mask_small = resize(
-        mask, (mask.shape[0] // 4, mask.shape[1] // 4), mode="constant", anti_aliasing=False)
+        mask, (mask.shape[0] // SCALE_FACTOR, mask.shape[1] // SCALE_FACTOR), mode="constant", anti_aliasing=False)
     preview = resize(
-        green, (green.shape[0] // 4, green.shape[1] // 4), mode="constant", anti_aliasing=False)
+        green, (green.shape[0] // SCALE_FACTOR, green.shape[1] // SCALE_FACTOR), mode="constant", anti_aliasing=False)
     blobs = feature.blob_dog(mask_small, threshold=.5,
                              min_sigma=0.5, max_sigma=20)
+
+    cv2.imshow("mask", preview)
 
     # clustering
     labels = []
@@ -115,12 +118,13 @@ while True:
     while len(blobs_to_connect) > 1:
         blob_a = blobs_to_connect.pop()
         for blob_b in blobs:
-            cv2.line(img, (int(blob_a[1]) * 4, int(blob_a[0]) * 4),
-                     (int(blob_b[1]) * 4, int(blob_b[0]) * 4), (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.line(img, (int(blob_a[1]) * SCALE_FACTOR, int(blob_a[0]) * SCALE_FACTOR),
+                     (int(blob_b[1]) * SCALE_FACTOR, int(blob_b[0]) * SCALE_FACTOR), (0, 0, 0), 1, cv2.LINE_AA)
 
     # output blobs
     for (label, (y, x, sigma)) in zip(labels, blobs):
-        cv2.circle(img, (int(x) * 4, int(y) * 4), 4, (0, 255, 0), -1)
+        cv2.circle(img, (int(x) * SCALE_FACTOR, int(y) * SCALE_FACTOR),
+                   4, (0, 255, 0), -1)
 
     # store last NUM_SAMPLES_TO_STORE blob locations
     historical_positions.append(
@@ -142,7 +146,7 @@ while True:
     average_distance = sum(distances) / \
         len(distances) if len(distances) else max_distance
 
-    centroids = []
+    centroids = [[0, 0]]
     for positions in historical_positions:
         x_sum = 0
         y_sum = 0
@@ -151,15 +155,18 @@ while True:
             x_sum += x
             y_sum += y
 
-        centroids.append([x_sum / len(positions), y_sum / len(positions)])
+        if len(positions) > 0:
+            centroids.append([x_sum / len(positions), y_sum / len(positions)])
 
-    mean_centroid = [
-        sum([x for x, y in centroids]) / len(centroids),
-        sum([y for x, y in centroids]) / len(centroids),
-    ]
+    mean_centroid = [0, 0]
+    if len(centroids) > 0:
+        mean_centroid = [
+            sum([x for x, y in centroids]) / len(centroids),
+            sum([y for x, y in centroids]) / len(centroids),
+        ]
 
     cv2.circle(
-        img, (int(centroids[-1][0]) * 4, int(centroids[-1][1]) * 4), 4, (0, 0, 255), -1)
+        img, (int(centroids[-1][0]) * SCALE_FACTOR, int(centroids[-1][1]) * SCALE_FACTOR), 4, (0, 0, 255), -1)
 
     centroid_errors = [abs(x - mean_centroid[0]) +
                        abs(y - mean_centroid[1]) for x, y in centroids]
