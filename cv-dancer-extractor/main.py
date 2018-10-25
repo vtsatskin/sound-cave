@@ -58,6 +58,17 @@ prev_ccs: Dict[ChannelControl, int] = {}
 cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
 cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
+cv2.namedWindow("mask", cv2.WND_PROP_FULLSCREEN)
+
+h = 117
+s = 111
+v = 163
+
+h2 = 255
+s2 = 255
+v2 = 255
+
+
 while True:
     ret, img = cap.read()
 
@@ -65,7 +76,7 @@ while True:
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # mask of green (36,0,0) ~ (70, 255,255)
-    mask = cv2.inRange(hsv, (150, 100, 100), (255, 255, 255))
+    mask = cv2.inRange(hsv, (h, s, v), (h2, s2, v2))
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
 
     # slice the green
@@ -205,11 +216,55 @@ while True:
 
     prev_ccs = dict([((cc.channel, cc.control), cc) for cc in ccs])
 
+    cv2.putText(img, '{},{},{}'.format(h, s, v), (10, 200),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
+    cv2.putText(img, '{},{},{}'.format(h2, s2, v2), (10, 240),
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
     # show
     cv2.imshow("window", img)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    key = cv2.waitKey(1) & 0xFF
+
+    if key == ord('a'):
+        h = max(h - 1, 0)
+
+    if key == ord('s'):
+        s = max(s - 1, 0)
+
+    if key == ord('d'):
+        v = max(v - 1, 0)
+
+    if key == ord('q'):
+        h = min(h + 1, 255)
+
+    if key == ord('w'):
+        s = min(s + 1, 255)
+
+    if key == ord('e'):
+        v = min(v + 1, 255)
+
+    if key == ord('f'):
+        h2 = max(h2 - 1, 0)
+
+    if key == ord('g'):
+        s2 = max(s2 - 1, 0)
+
+    if key == ord('h'):
+        v2 = max(v2 - 1, 0)
+
+    if key == ord('r'):
+        h2 = min(h2 + 1, 255)
+
+    if key == ord('t'):
+        s2 = min(s2 + 1, 255)
+
+    if key == ord('y'):
+        v2 = min(v2 + 1, 255)
+
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     break
 
 cap.release()
 cv2.destroyAllWindows()
